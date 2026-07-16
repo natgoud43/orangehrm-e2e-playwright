@@ -68,7 +68,7 @@ export default defineConfig({
   },
 
   projects: [
-    // Setup project: authenticates once (over the API) and writes the admin
+    // Setup project: logs in once through the browser and writes the admin
     // storageState that authenticated specs reuse. Runs before chromium via the
     // `dependencies` link below.
     {

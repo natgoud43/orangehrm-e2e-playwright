@@ -50,32 +50,46 @@ export function makeSystemUser(): SystemUserData {
   };
 }
 
+/** Format a Date as OrangeHRM's `yyyy-dd-mm` (year-day-month) string. */
+function toOrangeHrmDate(d: Date): string {
+  const yyyy = d.getFullYear();
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${yyyy}-${dd}-${mm}`;
+}
+
 /**
- * A unique future leave date in OrangeHRM's `yyyy-dd-mm` format (year-day-month).
+ * A leave date in OrangeHRM's `yyyy-dd-mm` format (year-day-month), computed
+ * relative to *now* so the flow stays correct as the calendar advances:
  *
- * Randomising the date (day 1-28 to stay valid in any month) makes each run's
- * leave request effectively unique, so searching My Leave for this exact date
- * finds *our* request and not another run's or another user's.
+ *  - **Future** (a few weeks out) so admin-assigned leave lands in "Scheduled"
+ *    status — a past date would be "Taken" instead and the Leave List filter
+ *    (which looks for "Scheduled") would miss it.
+ *  - **Within the current calendar year**, i.e. the leave period the entitlement
+ *    is granted for — a next-year date has no entitlement ("Leave Balance
+ *    Exceeded").
+ *  - **A weekday** — OrangeHRM treats weekends as non-working days and rejects a
+ *    single-day request with "No Working Days Selected".
  *
- * Window: Aug–Dec 2026 — future relative to the demo's clock (mid-2026) yet
- * inside the leave period that actually carries a balance for the demo's admin
- * (2027 has none, so requests there are rejected as "Leave Balance Exceeded").
- * Against another environment, adjust this window to a period with entitlement.
+ * The random offset also keeps each run's date effectively unique.
  */
 export function makeFutureLeaveDate(): string {
-  const year = 2026;
-  // Keep picking until we land on a weekday — OrangeHRM counts weekends as
-  // non-working days and rejects a single-day request with "No Working Days
-  // Selected".
-  for (let attempt = 0; attempt < 50; attempt++) {
-    const dayNum = faker.number.int({ min: 1, max: 28 });
-    const monthNum = faker.number.int({ min: 8, max: 12 });
-    const weekday = new Date(year, monthNum - 1, dayNum).getDay(); // 0=Sun, 6=Sat
-    if (weekday !== 0 && weekday !== 6) {
-      const day = String(dayNum).padStart(2, '0');
-      const month = String(monthNum).padStart(2, '0');
-      return `${year}-${day}-${month}`;
+  const now = new Date();
+  const yearEnd = new Date(now.getFullYear(), 11, 31);
+
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const candidate = new Date(now);
+    candidate.setDate(candidate.getDate() + faker.number.int({ min: 14, max: 120 }));
+    const weekday = candidate.getDay(); // 0=Sun, 6=Sat
+    if (candidate <= yearEnd && weekday !== 0 && weekday !== 6) {
+      return toOrangeHrmDate(candidate);
     }
   }
-  return `${year}-03-08`; // 2026-08-03 is a Monday — safe fallback
+
+  // Fallback (only reachable late in December): the next weekday from today.
+  const d = new Date(now);
+  do {
+    d.setDate(d.getDate() + 1);
+  } while (d.getDay() === 0 || d.getDay() === 6);
+  return toOrangeHrmDate(d);
 }

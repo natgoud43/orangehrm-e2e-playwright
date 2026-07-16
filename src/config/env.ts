@@ -10,22 +10,6 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
 
 /**
- * Read a variable that must be present. We fail loudly at load time with a
- * clear message rather than letting an `undefined` leak into a selector or URL
- * and surface later as a confusing test failure.
- */
-function required(name: string): string {
-  const value = process.env[name];
-  if (value === undefined || value.trim() === '') {
-    throw new Error(
-      `Missing required environment variable "${name}". ` +
-        `Copy .env.example to .env and fill it in (see README > Setup).`,
-    );
-  }
-  return value;
-}
-
-/**
  * Read an optional variable, falling back to a sensible default so the suite
  * runs out-of-the-box against the public demo with zero configuration.
  */
@@ -57,6 +41,6 @@ export const env = {
   },
 } as const;
 
-// Re-export the guards so a later, stricter setup (e.g. a real environment with
-// no safe defaults) can require specific variables without duplicating logic.
-export { required, optional };
+// Exported so a later, stricter setup (e.g. a real environment with no safe
+// defaults) can reuse the same reader instead of touching process.env directly.
+export { optional };

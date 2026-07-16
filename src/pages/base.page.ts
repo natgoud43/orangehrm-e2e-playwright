@@ -32,14 +32,6 @@ export abstract class BasePage {
     await expect(this.toast()).toContainText(text, { timeout: 20_000 });
   }
 
-  /**
-   * Open a section from the left-hand main menu by its visible label
-   * (e.g. "PIM", "Admin", "Leave").
-   */
-  async openMenu(label: string): Promise<void> {
-    await this.page.getByRole('link', { name: label, exact: true }).click();
-  }
-
   // --- oxd form helpers -----------------------------------------------------
   // OrangeHRM forms are a grid of `.oxd-input-group`, each pairing a <label>
   // with its control. Addressing fields by their visible label (rather than
@@ -75,21 +67,6 @@ export abstract class BasePage {
     const suggestion = this.page.getByRole('option', { name: option ?? query }).first();
     await suggestion.waitFor({ timeout: 10_000 });
     await suggestion.click();
-  }
-
-  /**
-   * Click a confirmation modal's Confirm/OK/Yes button if one appeared, else
-   * no-op. Some save actions prompt a confirmation, some don't — this keeps the
-   * caller from having to know which.
-   */
-  protected async confirmDialogIfPresent(): Promise<void> {
-    const button = this.page.getByRole('button', { name: /^(Confirm|Ok|Yes)$/i });
-    try {
-      await button.waitFor({ timeout: 5_000 });
-      await button.click();
-    } catch {
-      // No confirmation dialog — nothing to do.
-    }
   }
 
   /**

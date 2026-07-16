@@ -55,11 +55,14 @@ test.describe('Admin user management & role-based access', () => {
       await login.loginUntilDashboard(creds.username, creds.password);
       await dashboard.expectLoaded();
 
-      // The ESS role must NOT expose the admin-only modules...
+      // Assert a normal self-service item FIRST — this both proves the session is
+      // real and, crucially, waits until the sidebar menu has actually rendered.
+      // Only then are the count-0 checks meaningful: otherwise they could pass
+      // simply because the menu hadn't loaded yet, masking a broken restriction.
+      await expect(page.getByRole('link', { name: 'My Info', exact: true })).toBeVisible();
+      // The ESS role must NOT expose the admin-only modules.
       await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(0);
       await expect(page.getByRole('link', { name: 'PIM', exact: true })).toHaveCount(0);
-      // ...but a normal self-service item is present, proving a real session.
-      await expect(page.getByRole('link', { name: 'My Info', exact: true })).toBeVisible();
     });
   });
 });
