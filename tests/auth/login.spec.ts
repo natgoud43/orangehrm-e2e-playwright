@@ -12,7 +12,7 @@ import { TAGS } from '../../src/utils/test-tags';
  * and edge cases are @full. Credentials come from env config, never hard-coded.
  */
 test.describe('Authentication', () => {
-  test(`valid credentials land on the dashboard ${TAGS.SMOKE}`, async ({ page }) => {
+  test(`valid credentials land on the dashboard ${TAGS.SMOKE} ${TAGS.FULL}`, async ({ page }) => {
     const login = new LoginPage(page);
     const dashboard = new DashboardPage(page);
 
@@ -24,7 +24,7 @@ test.describe('Authentication', () => {
     await dashboard.expectLoaded('Dashboard');
   });
 
-  test(`invalid credentials are rejected ${TAGS.FULL}`, async ({ page }) => {
+  test(`invalid credentials are rejected ${TAGS.SMOKE} ${TAGS.FULL}`, async ({ page }) => {
     const login = new LoginPage(page);
 
     await login.goto();
@@ -57,7 +57,7 @@ test.describe('Authentication', () => {
     await expect(page).toHaveURL(/\/auth\/login/);
   });
 
-  test(`protected route redirects to login when unauthenticated ${TAGS.FULL}`, async ({ page }) => {
+  test(`protected route redirects to login when unauthenticated ${TAGS.SMOKE} ${TAGS.FULL}`, async ({ page }) => {
     // Hitting an authenticated URL with no session must bounce to login rather
     // than exposing the page — the front-end access-control guarantee.
     await page.goto('/web/index.php/pim/viewEmployeeList');
