@@ -1,79 +1,86 @@
 import { defineConfig, devices } from '@playwright/test';
+import { env } from './src/config/env';
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
-
-/**
- * See https://playwright.dev/docs/test-configuration.
+ * Playwright configuration.
+ *
+ * Design notes (the "why" a reviewer cares about):
+ *  - baseURL, credentials and all environment-specific values come from
+ *    `src/config/env.ts` (backed by `.env`), never hard-coded here. Point the
+ *    suite at another environment by editing `.env`, not this file.
+ *  - Quick pack vs. full suite is done with tags (`@smoke` / `@full`) filtered
+ *    at run time via `--grep`, not separate config files — one source of truth.
+ *  - Failure artefacts (trace, screenshot, video) are captured so a reviewer
+ *    can open the HTML report and fully diagnose a failure without re-running.
  */
 export default defineConfig({
   testDir: './tests',
-  /* Run tests in files in parallel */
-  fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
-  use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+  // Run test files in parallel — each test creates its own uniquely-named data
+  // (see data-factory) so parallel workers never collide on shared state.
+  fullyParallel: true,
+
+  // A stray `test.only` left in the source should fail CI, not silently skip
+  // the rest of the suite.
+  forbidOnly: !!process.env.CI,
+
+  // Retry only on CI: the public demo is occasionally flaky under load, and a
+  // single retry there separates real regressions from transient network blips
+  // without masking genuinely broken tests locally.
+  retries: process.env.CI ? 2 : 0,
+
+  // Serialise on CI for stable, reproducible runs against a shared demo host;
+  // let Playwright pick the worker count locally for speed.
+  workers: process.env.CI ? 1 : undefined,
+
+  // The public demo is a shared, often cold-starting host — its login redirect
+  // chain (login → validate → dashboard) can be genuinely slow. Generous
+  // timeouts here absorb that latency so the suite tests the app, not the
+  // demo's mood. Against a dedicated environment these can drop substantially.
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+
+  // HTML report for humans + a concise line reporter for the terminal/CI log.
+  reporter: [
+    ['html', { open: 'never' }],
+    ['list'],
+  ],
+
+  use: {
+    baseURL: env.baseURL,
+
+    // Capture a full trace the first time a test is retried — enough to replay
+    // the run step-by-step in the trace viewer without turning it on globally
+    // (traces are heavy; we only pay the cost when something actually fails).
     trace: 'on-first-retry',
+
+    // Screenshot + video only on failure: zero noise on green runs, full
+    // visual context on red ones.
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+
+    // Fail fast on a hung action rather than waiting out the global timeout.
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
   },
 
-  /* Configure projects for major browsers */
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    /* Test against mobile viewports. */
+    // Firefox and WebKit are defined but commented out by default: the config
+    // supports a full cross-browser matrix, but running every browser on every
+    // push is a deliberate cost/confidence tradeoff (see README > Out of scope).
+    // Enable locally or in a nightly job with `--project=firefox` etc.
     // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
     // },
     // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
     // },
   ],
-
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
 });
