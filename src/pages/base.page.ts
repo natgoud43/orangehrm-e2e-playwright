@@ -25,10 +25,11 @@ export abstract class BasePage {
   /**
    * Assert that a toast appeared containing `text` (e.g. "Successfully Saved").
    * This is our proof that an action changed server state, not just that a
-   * button was clicked. The toast is transient, so we assert while it's visible.
+   * button was clicked. The wait is generous because on the slow demo the save
+   * response — and therefore the toast — can lag well past the default timeout.
    */
   async expectToast(text: string | RegExp): Promise<void> {
-    await expect(this.toast()).toContainText(text);
+    await expect(this.toast()).toContainText(text, { timeout: 20_000 });
   }
 
   /**
@@ -37,5 +38,42 @@ export abstract class BasePage {
    */
   async openMenu(label: string): Promise<void> {
     await this.page.getByRole('link', { name: label, exact: true }).click();
+  }
+
+  // --- oxd form helpers -----------------------------------------------------
+  // OrangeHRM forms are a grid of `.oxd-input-group`, each pairing a <label>
+  // with its control. Addressing fields by their visible label (rather than
+  // brittle positional selectors) keeps page objects readable and resilient.
+  // Labels are matched exactly so "Password" never also matches "Confirm
+  // Password".
+
+  /** The input-group whose label is exactly `label`. */
+  protected fieldGroup(label: string): Locator {
+    return this.page
+      .locator('.oxd-input-group')
+      .filter({ has: this.page.getByText(label, { exact: true }) });
+  }
+
+  /** Fill a labelled text/password input. */
+  async fillField(label: string, value: string): Promise<void> {
+    await this.fieldGroup(label).locator('input').fill(value);
+  }
+
+  /** Choose an option from a labelled oxd-select dropdown. */
+  async selectOption(label: string, option: string): Promise<void> {
+    await this.fieldGroup(label).locator('.oxd-select-text').click();
+    await this.page.getByRole('option', { name: option, exact: true }).click();
+  }
+
+  /**
+   * Pick an entry from a labelled autocomplete field: type `query`, then click
+   * the matching suggestion (defaults to the query text). Waits for the
+   * suggestion so we never submit before the async lookup resolves.
+   */
+  async selectAutocomplete(label: string, query: string, option?: string): Promise<void> {
+    await this.fieldGroup(label).locator('input').fill(query);
+    const suggestion = this.page.getByRole('option', { name: option ?? query }).first();
+    await suggestion.waitFor({ timeout: 10_000 });
+    await suggestion.click();
   }
 }

@@ -38,6 +38,28 @@ export class LoginPage extends BasePage {
   }
 
   /**
+   * Log in and wait for the dashboard, retrying the whole flow (navigate → fill
+   * → submit) to absorb the public demo's cold-start drops and slow SPA boots.
+   *
+   * Use this for *support* logins where we just need a working session (the auth
+   * setup, logging in as a freshly-created user). The functional login tests in
+   * login.spec.ts deliberately do NOT use this — they assert a single attempt's
+   * real behaviour.
+   */
+  async loginUntilDashboard(username: string, password: string, attempts = 3): Promise<void> {
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        await this.goto();
+        await this.login(username, password);
+        await expect(this.page).toHaveURL(/\/dashboard\//, { timeout: 20_000 });
+        return;
+      } catch (error) {
+        if (attempt === attempts) throw error;
+      }
+    }
+  }
+
+  /**
    * The app's top-level error banner (e.g. "Invalid credentials"), shown for a
    * rejected but well-formed login attempt.
    */

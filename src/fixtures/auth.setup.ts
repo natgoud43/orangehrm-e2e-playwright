@@ -34,18 +34,9 @@ setup('authenticate as admin and save storage state', async ({ page }) => {
   const login = new LoginPage(page);
   const dashboard = new DashboardPage(page);
 
-  // The public demo occasionally drops the first login after an idle period,
-  // leaving us on /auth/login. Because this setup gates the entire run, we retry
-  // the login a few times before giving up — resilience here, not in every test.
-  let landed = false;
-  for (let attempt = 1; attempt <= 3 && !landed; attempt++) {
-    await login.goto();
-    await login.login(env.admin.username, env.admin.password);
-    landed = await page
-      .waitForURL(/\/dashboard\//, { timeout: 15_000 })
-      .then(() => true)
-      .catch(() => false);
-  }
+  // Retry the whole login to absorb the flaky public host — this setup gates the
+  // entire run, so resilience lives here, not in every test.
+  await login.loginUntilDashboard(env.admin.username, env.admin.password);
 
   // Prove the session is real before persisting it — never save a broken login.
   await dashboard.expectLoaded();
