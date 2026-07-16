@@ -30,10 +30,9 @@ test.describe('PIM employee management', () => {
     await test.step('create a new employee', async () => {
       await form.gotoAdd();
       await form.fillName({ firstName: employee.firstName, lastName: employee.lastName });
-      await form.save('Successfully Saved');
       // Landing on the Personal Details page with a real empNumber is the app's
       // proof the record was created.
-      const empNumber = await form.currentEmpNumber();
+      const empNumber = await form.create();
       expect(Number(empNumber)).toBeGreaterThan(0);
     });
 

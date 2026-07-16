@@ -37,10 +37,21 @@ export class EmployeeFormPage extends BasePage {
     if (name.lastName !== undefined) await this.lastName.fill(name.lastName);
   }
 
-  /** Submit the form and confirm the app reported success. */
+  /** Submit the form and confirm the app reported success (used for edits). */
   async save(expected: string | RegExp = /Successfully (Saved|Updated)/): Promise<void> {
     await this.saveButton.click();
     await this.expectToast(expected);
+  }
+
+  /**
+   * Submit a new employee and return their number. Waits for the redirect to
+   * the Personal Details page as the success signal rather than the transient
+   * toast — the redirect is reliable even when the shared demo is slow under
+   * parallel load (where a brief toast can be missed).
+   */
+  async create(): Promise<string> {
+    await this.saveButton.click();
+    return this.currentEmpNumber();
   }
 
   /**

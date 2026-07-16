@@ -24,14 +24,17 @@ export default defineConfig({
   // the rest of the suite.
   forbidOnly: !!process.env.CI,
 
-  // Retry only on CI: the public demo is occasionally flaky under load, and a
-  // single retry there separates real regressions from transient network blips
-  // without masking genuinely broken tests locally.
-  retries: process.env.CI ? 2 : 0,
+  // The public demo is a shared, occasionally-dropping host, so a retry absorbs
+  // transient blips (a slow save, a cold-start timeout) and separates them from
+  // real regressions: 2 on CI, 1 locally. A dedicated environment could set this
+  // back to 0 locally.
+  retries: process.env.CI ? 2 : 1,
 
-  // Serialise on CI for stable, reproducible runs against a shared demo host;
-  // let Playwright pick the worker count locally for speed.
-  workers: process.env.CI ? 1 : undefined,
+  // Cap concurrency: the public demo throttles under many simultaneous sessions
+  // (heavy tests each create several records), so we trade a little speed for
+  // reliability — 1 worker on CI, a modest 3 locally. Against a dedicated
+  // environment this can be raised or removed.
+  workers: process.env.CI ? 1 : 3,
 
   // The public demo is a shared, often cold-starting host — its login redirect
   // chain (login → validate → dashboard) can be genuinely slow. Generous

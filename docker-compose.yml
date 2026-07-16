@@ -1,0 +1,41 @@
+# -----------------------------------------------------------------------------
+# OPTIONAL local OrangeHRM instance — a stability fallback, NOT the default path.
+#
+# The default way to run this suite needs only Node.js (see README > Setup) and
+# targets the public demo. This file exists purely so that, if the public demo
+# is slow or mid-reset, you can run the suite against a private, deterministic
+# instance instead. It requires Docker, which the default path does not.
+#
+#   docker compose up -d          # start OrangeHRM on http://localhost:8080
+#   # then set BASE_URL=http://localhost:8080 in .env and run the suite
+#   docker compose down           # stop it (add -v to also wipe the database)
+#
+# First boot takes a few minutes while the app initialises its database.
+# -----------------------------------------------------------------------------
+services:
+  orangehrm:
+    image: orangehrm/orangehrm:5.7
+    ports:
+      - "8080:80"
+    environment:
+      ORANGEHRM_DATABASE_HOST: db
+      ORANGEHRM_DATABASE_USER: orangehrm
+      ORANGEHRM_DATABASE_PASSWORD: orangehrm
+      ORANGEHRM_DATABASE_NAME: orangehrm
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10.6
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: orangehrm
+      MYSQL_PASSWORD: orangehrm
+      MYSQL_DATABASE: orangehrm
+    volumes:
+      - orangehrm_db_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  orangehrm_db_data:

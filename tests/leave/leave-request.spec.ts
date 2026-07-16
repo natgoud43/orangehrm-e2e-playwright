@@ -29,8 +29,7 @@ test.describe('Leave management', () => {
       const form = new EmployeeFormPage(page);
       await form.gotoAdd();
       await form.fillName({ firstName: employee.firstName, lastName: employee.lastName });
-      await form.save('Successfully Saved');
-      await form.currentEmpNumber();
+      await form.create();
     });
 
     await test.step('grant them a leave entitlement', async () => {
