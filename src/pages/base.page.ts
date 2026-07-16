@@ -76,4 +76,33 @@ export abstract class BasePage {
     await suggestion.waitFor({ timeout: 10_000 });
     await suggestion.click();
   }
+
+  /**
+   * Click a confirmation modal's Confirm/OK/Yes button if one appeared, else
+   * no-op. Some save actions prompt a confirmation, some don't — this keeps the
+   * caller from having to know which.
+   */
+  protected async confirmDialogIfPresent(): Promise<void> {
+    const button = this.page.getByRole('button', { name: /^(Confirm|Ok|Yes)$/i });
+    try {
+      await button.waitFor({ timeout: 5_000 });
+      await button.click();
+    } catch {
+      // No confirmation dialog — nothing to do.
+    }
+  }
+
+  /**
+   * Set a labelled oxd date field. NOTE: OrangeHRM's date inputs use a
+   * `yyyy-dd-mm` mask (year-day-month, not the usual month/day order) — pass the
+   * value in that format. We clear first (the field may carry a default) and
+   * dismiss the calendar popup so it can't swallow the next interaction.
+   */
+  async setDate(label: string, value: string): Promise<void> {
+    const input = this.fieldGroup(label).locator('input');
+    await input.click();
+    await input.fill('');
+    await input.fill(value);
+    await this.page.keyboard.press('Escape');
+  }
 }

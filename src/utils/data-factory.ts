@@ -49,3 +49,33 @@ export function makeSystemUser(): SystemUserData {
     password: `Pw-${faker.internet.password({ length: 10 })}1A`,
   };
 }
+
+/**
+ * A unique future leave date in OrangeHRM's `yyyy-dd-mm` format (year-day-month).
+ *
+ * Randomising the date (day 1-28 to stay valid in any month) makes each run's
+ * leave request effectively unique, so searching My Leave for this exact date
+ * finds *our* request and not another run's or another user's.
+ *
+ * Window: Aug–Dec 2026 — future relative to the demo's clock (mid-2026) yet
+ * inside the leave period that actually carries a balance for the demo's admin
+ * (2027 has none, so requests there are rejected as "Leave Balance Exceeded").
+ * Against another environment, adjust this window to a period with entitlement.
+ */
+export function makeFutureLeaveDate(): string {
+  const year = 2026;
+  // Keep picking until we land on a weekday — OrangeHRM counts weekends as
+  // non-working days and rejects a single-day request with "No Working Days
+  // Selected".
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const dayNum = faker.number.int({ min: 1, max: 28 });
+    const monthNum = faker.number.int({ min: 8, max: 12 });
+    const weekday = new Date(year, monthNum - 1, dayNum).getDay(); // 0=Sun, 6=Sat
+    if (weekday !== 0 && weekday !== 6) {
+      const day = String(dayNum).padStart(2, '0');
+      const month = String(monthNum).padStart(2, '0');
+      return `${year}-${day}-${month}`;
+    }
+  }
+  return `${year}-03-08`; // 2026-08-03 is a Monday — safe fallback
+}

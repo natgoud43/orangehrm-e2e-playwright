@@ -48,6 +48,13 @@ export const env = {
     username: optional('ADMIN_USERNAME', 'Admin'),
     password: optional('ADMIN_PASSWORD', 'admin123'),
   },
+
+  /** Leave type to exercise in the leave flow — the only one the demo's admin
+   * has available is "CAN - Vacation", but it's configurable so the suite can
+   * point at whatever a different environment offers. */
+  leave: {
+    type: optional('LEAVE_TYPE', 'CAN - Vacation'),
+  },
 } as const;
 
 // Re-export the guards so a later, stricter setup (e.g. a real environment with
