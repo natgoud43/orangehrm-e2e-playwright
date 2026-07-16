@@ -25,7 +25,9 @@ export class LoginPage extends BasePage {
   /** Navigate to the login screen. */
   async goto(): Promise<void> {
     await this.page.goto('/web/index.php/auth/login');
-    await expect(this.submit).toBeVisible();
+    // The login form is rendered by the Vue app after it boots; on a cold demo
+    // that can take a while, so wait generously for the button to appear.
+    await expect(this.submit).toBeVisible({ timeout: 30_000 });
   }
 
   /** Fill both fields and submit. */

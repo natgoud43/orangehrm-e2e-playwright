@@ -33,10 +33,9 @@ export abstract class BasePage {
 
   /**
    * Open a section from the left-hand main menu by its visible label
-   * (e.g. "PIM", "Admin", "Leave"). Waits for navigation to settle.
+   * (e.g. "PIM", "Admin", "Leave").
    */
   async openMenu(label: string): Promise<void> {
     await this.page.getByRole('link', { name: label, exact: true }).click();
-    await this.page.waitForLoadState('networkidle');
   }
 }

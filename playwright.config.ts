@@ -65,9 +65,19 @@ export default defineConfig({
   },
 
   projects: [
+    // Setup project: authenticates once (over the API) and writes the admin
+    // storageState that authenticated specs reuse. Runs before chromium via the
+    // `dependencies` link below.
+    {
+      name: 'setup',
+      testDir: './src/fixtures',
+      testMatch: /.*\.setup\.ts/,
+    },
+
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
     },
 
     // Firefox and WebKit are defined but commented out by default: the config
