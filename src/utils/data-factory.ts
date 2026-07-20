@@ -32,12 +32,23 @@ export interface SystemUserData {
   password: string;
 }
 
+/** OrangeHRM limits each name field (first/middle/last) to 30 characters. */
+const MAX_NAME_LEN = 30;
+
 /** A fresh employee with a unique, human-readable name. */
 export function makeEmployee(): EmployeeData {
-  const firstName = faker.person.firstName();
-  // Suffix the last name so the full name is unique and searchable, while still
-  // looking like a real record in the UI.
-  const lastName = `${faker.person.lastName()}-${uniqueSuffix()}`;
+  const firstName = faker.person.firstName().slice(0, MAX_NAME_LEN);
+
+  // The suffix carries the uniqueness the tests search by, so it must survive
+  // intact; the faker part is only cosmetic, so trim *it* to fit the 30-char
+  // limit. faker occasionally returns a long or double-barrelled surname
+  // (e.g. "Dickinson-Schaefer") that would otherwise push us over and trip the
+  // app's "Should not exceed 30 characters" validation.
+  const suffix = uniqueSuffix();
+  const room = MAX_NAME_LEN - suffix.length - 1; // -1 for the '-' separator
+  const base = faker.person.lastName().replace(/[^A-Za-z]/g, '').slice(0, room);
+  const lastName = `${base}-${suffix}`;
+
   return { firstName, lastName, fullName: `${firstName} ${lastName}` };
 }
 
