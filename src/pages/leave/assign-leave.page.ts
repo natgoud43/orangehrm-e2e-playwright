@@ -25,7 +25,7 @@ export class AssignLeavePage extends BasePage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto('/web/index.php/leave/assignLeave');
+    await this.gotoWithRetry('/web/index.php/leave/assignLeave');
     await expect(this.assignButton).toBeVisible({ timeout: 20_000 });
   }
 

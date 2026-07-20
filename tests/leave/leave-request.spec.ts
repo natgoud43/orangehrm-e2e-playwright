@@ -45,8 +45,7 @@ test.describe('Leave management', () => {
     await test.step('confirm the leave shows in the Leave List', async () => {
       const list = new LeaveListPage(page);
       await list.goto();
-      await list.search(employee.fullName, date, date);
-      await list.expectRequest(date, leaveType);
+      await list.verifyRequest(employee.fullName, date, leaveType);
     });
   });
 });

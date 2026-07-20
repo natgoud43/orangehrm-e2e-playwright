@@ -17,6 +17,24 @@ import { Page, Locator, expect } from '@playwright/test';
 export abstract class BasePage {
   constructor(protected readonly page: Page) {}
 
+  /**
+   * Navigate with a retry. The shared demo occasionally aborts a navigation
+   * under load (`net::ERR_ABORTED`). A page load submits nothing, so retrying is
+   * always safe — use this for a page object's `goto`.
+   */
+  protected async gotoWithRetry(url: string, attempts = 3): Promise<void> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        await this.page.goto(url);
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError;
+  }
+
   /** The app's transient toast/notification banner. */
   protected toast(): Locator {
     return this.page.locator('.oxd-toast');

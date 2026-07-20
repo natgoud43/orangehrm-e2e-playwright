@@ -19,20 +19,32 @@ export class LeaveListPage extends BasePage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto('/web/index.php/leave/viewLeaveList');
+    await this.gotoWithRetry('/web/index.php/leave/viewLeaveList');
     await expect(this.searchButton).toBeVisible({ timeout: 20_000 });
   }
 
-  /** Filter by employee name and a date range (bounds in yyyy-dd-mm). */
-  async search(employeeName: string, from: string, to: string): Promise<void> {
+  /**
+   * Filter by employee + single date, then assert the leave row exists.
+   *
+   * The list is a read, so the whole search-and-check is retried (re-clicking
+   * Search re-queries safely) to ride out a lagging list update. Filters are set
+   * once up front — re-toggling the "Show Leave with Status" multi-select in a
+   * loop would deselect it.
+   */
+  async verifyRequest(employeeName: string, date: string, leaveType: string): Promise<void> {
     // "Show Leave with Status" is a required multi-select that defaults to
     // "Pending Approval"; admin-assigned leave is "Scheduled", so add that
     // status (leaving the default in place) or our row would be filtered out.
     await this.addStatus('Scheduled');
-    await this.setDate('From Date', from);
-    await this.setDate('To Date', to);
+    await this.setDate('From Date', date);
+    await this.setDate('To Date', date);
     await this.selectAutocomplete('Employee Name', employeeName);
-    await this.searchButton.click();
+
+    const row = this.rows.filter({ hasText: date }).filter({ hasText: leaveType });
+    await expect(async () => {
+      await this.searchButton.click();
+      await expect(row.first()).toBeVisible({ timeout: 6_000 });
+    }).toPass({ timeout: 45_000, intervals: [2_000, 3_000, 5_000] });
   }
 
   /** Add a status to the "Show Leave with Status" multi-select. */
@@ -43,11 +55,5 @@ export class LeaveListPage extends BasePage {
     await group.locator('.oxd-select-text').click();
     await this.page.getByRole('option', { name: status, exact: true }).click();
     await this.page.keyboard.press('Escape');
-  }
-
-  /** Assert a leave row exists for `date` with the given type. */
-  async expectRequest(date: string, leaveType: string): Promise<void> {
-    const row = this.rows.filter({ hasText: date }).filter({ hasText: leaveType });
-    await expect(row.first()).toBeVisible({ timeout: 15_000 });
   }
 }
