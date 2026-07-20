@@ -5,6 +5,10 @@ in **Playwright + TypeScript**. Covers the core state-changing flows — auth, e
 management (PIM), user/role admin, and leave — with a focus on architecture and
 reliability over test count.
 
+**Agent-friendly:** commands, conventions, and a step-by-step "add a new flow" guide live
+in [`CLAUDE.md`](CLAUDE.md), so an AI agent (or a new engineer) can extend the suite without
+reverse-engineering it.
+
 ## Quick start
 
 Needs **Node.js 18+** only (no DB, no Docker).
