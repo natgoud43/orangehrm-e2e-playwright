@@ -43,10 +43,13 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000 },
 
-  // HTML report for humans + a concise line reporter for the terminal/CI log.
+  // Full interactive HTML report + a concise terminal line reporter + a
+  // lightweight one-page summary (docs/report.html) that surfaces the result
+  // counts and the error text of any failed/flaky test at a glance.
   reporter: [
     ['html', { open: 'never' }],
     ['list'],
+    ['./reporters/summary-report.ts', { outputFile: 'docs/report.html' }],
   ],
 
   use: {

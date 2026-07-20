@@ -8,6 +8,9 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 
+# Generated one-page summary (produced by reporters/summary-report.ts on each run)
+/docs/report.html
+
 # Environment / secrets — real credentials never get committed
 .env
 .env.local
