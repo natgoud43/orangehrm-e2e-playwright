@@ -13,10 +13,12 @@ npm run test:full       # full pack (@full)
 npm run test:headed     # watch it run
 npm run test:ui         # Playwright UI mode
 npm run typecheck       # tsc --noEmit — run before committing
-npm run report          # open the last HTML report
+npm run report          # open the full interactive Playwright report
 ```
 
 Run a single spec: `npx playwright test tests/pim/employee-crud.spec.ts --project=chromium`.
+Every run also writes `docs/report.html` — a light one-page summary (result stat bar plus
+the error text of any failed/flaky test). It's generated, so it's git-ignored.
 
 ## Layout
 
@@ -58,5 +60,17 @@ Run a single spec: `npx playwright test tests/pim/employee-crud.spec.ts --projec
 
 - The public demo is slow and cold — timeouts are generous and retries are on for a reason
   (see `playwright.config.ts`). A `flaky → passed on retry` line is expected, not a failure.
+  **But don't reflexively blame the host:** a failure that *looks* like flakiness can be a
+  real bug. "Still on `/addEmployee` after Save" was, more than once, a name overflowing its
+  length limit — not a dropped request. Read the error text / trace before concluding "demo".
+- **Field length limits** the app enforces: First / Middle / Last name = 30, Username = 40,
+  Password = 64. Generated data must fit — `data-factory` caps names.
+- **Retry only idempotent steps.** Self-healing a flaky action is safe only when re-running
+  it can't change the result: employee create, leave entitlement (the confirm *sets* the
+  value, not increments), navigation (`gotoWithRetry`), and list reads all retry internally.
+  **Assign-leave submit does not** — re-submitting a persisted assignment errors as
+  "overlapping leave", so it's left to the test-level retry.
+- **Measure reliability, don't guess it:** run repeatedly with `--retries=0` for true
+  first-attempt pass rates; `docs/report.html` surfaces failures/flakes with their error text.
 - Confirmation modals vary: some save actions prompt (e.g. entitlement → **Confirm**),
   some don't (assign leave) — check the flow rather than assuming.

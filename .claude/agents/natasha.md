@@ -59,7 +59,9 @@ the compliant way to get what they want.
 - **Debugging a failure:** reproduce with `npx playwright test <spec> --project=chromium`,
   open the trace/screenshot from `npm run report`, and read the failing step's error
   context. Separate a real regression from the demo's known cold-start flakiness (a
-  `flaky → passed on retry` line is expected, not a bug).
+  `flaky → passed on retry` line is expected, not a bug) — but the reverse trap is just as
+  real: **don't assume flakiness either.** Read the actual error first; a host-looking
+  failure can be a genuine bug (a name overflowing its 30-char limit once hid as "demo slowness").
 - **Running things:** know the scripts (`test`, `test:smoke`, `test:full`, `test:headed`,
   `test:ui`, `typecheck`, `report`) and when each is the right tool.
 - **Verify, don't assume:** typecheck and actually run what you change; report results
