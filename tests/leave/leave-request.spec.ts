@@ -27,14 +27,12 @@ test.describe('Leave management', () => {
 
     await test.step('create the employee who will receive leave', async () => {
       const form = new EmployeeFormPage(page);
-      await form.gotoAdd();
-      await form.fillName({ firstName: employee.firstName, lastName: employee.lastName });
-      await form.create();
+      await form.createEmployee({ firstName: employee.firstName, lastName: employee.lastName });
     });
 
     await test.step('grant them a leave entitlement', async () => {
+      // addEntitlement opens the form itself (and retries), so no goto() here.
       const entitlements = new LeaveEntitlementPage(page);
-      await entitlements.goto();
       await entitlements.addEntitlement(employee.fullName, leaveType, 5);
     });
 

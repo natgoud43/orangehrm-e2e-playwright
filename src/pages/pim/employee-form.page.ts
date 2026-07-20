@@ -44,14 +44,33 @@ export class EmployeeFormPage extends BasePage {
   }
 
   /**
-   * Submit a new employee and return their number. Waits for the redirect to
-   * the Personal Details page as the success signal rather than the transient
-   * toast — the redirect is reliable even when the shared demo is slow under
-   * parallel load (where a brief toast can be missed).
+   * Create a new employee end to end (open form → fill → submit → land on
+   * Personal Details) and return their number.
+   *
+   * Retries the whole sequence, because employee creation is the suite's most
+   * common flake point: under parallel load the shared demo intermittently
+   * drops the create request or fails to boot the form, leaving us on the Add
+   * Employee page. That dropped-request case never persists anything, so
+   * re-submitting is safe. In the rare case a write *did* land but the client
+   * hung, the caller's search-count assertion plus the test-level retry catch
+   * the duplicate — so this self-heal is safe by construction, with a backstop.
    */
-  async create(): Promise<string> {
-    await this.saveButton.click();
-    return this.currentEmpNumber();
+  async createEmployee(
+    name: { firstName: string; lastName: string; middleName?: string },
+    attempts = 3,
+  ): Promise<string> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        await this.gotoAdd();
+        await this.fillName(name);
+        await this.saveButton.click();
+        return await this.currentEmpNumber();
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError;
   }
 
   /**

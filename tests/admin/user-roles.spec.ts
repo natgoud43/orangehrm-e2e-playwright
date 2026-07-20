@@ -28,9 +28,7 @@ test.describe('Admin user management & role-based access', () => {
 
     await test.step('create an employee to attach the login to', async () => {
       const form = new EmployeeFormPage(page);
-      await form.gotoAdd();
-      await form.fillName({ firstName: employee.firstName, lastName: employee.lastName });
-      await form.create();
+      await form.createEmployee({ firstName: employee.firstName, lastName: employee.lastName });
     });
 
     await test.step('create an ESS system user for that employee', async () => {
